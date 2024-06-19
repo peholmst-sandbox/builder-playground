@@ -1,22 +1,20 @@
 package com.example.application.views;
 
-import com.example.application.framework.Ref;
+import com.example.application.framework.signals.ListSignal;
 import com.example.application.framework.signals.Signal;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.UnorderedList;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 
-import java.net.URI;
+import java.util.List;
 import java.util.stream.Stream;
 
-import static com.example.application.framework.Ref.ref;
 import static com.example.application.framework.html.HtmlBuilders.*;
+import static com.example.application.framework.signals.Signals.listSignal;
 import static com.example.application.framework.signals.Signals.signal;
 
 @Route("hello")
@@ -24,11 +22,11 @@ public class HelloWorldView extends HorizontalLayout {
 
     public static class Card extends Composite<ListItem> {
 
-        private final Signal<String> imageSrc = signal();
-        private final Signal<String> imageAlt = signal();
-        private final Signal<String> cardTitle = signal();
-        private final Signal<String> cardText = signal();
-        private final Ref<Div> buttons = ref();
+        public final Signal<String> imageSrc = signal();
+        public final Signal<String> imageAlt = signal();
+        public final Signal<String> cardTitle = signal();
+        public final Signal<String> cardText = signal();
+        public final ListSignal<Button> buttons = listSignal();
 
         public Card() {
             getContent().add(
@@ -39,8 +37,8 @@ public class HelloWorldView extends HorizontalLayout {
                                             .classNames(Display.FLEX, Flex.GROW)
                                             .children(image(image -> image
                                                     .classNames(MaxWidth.FULL)
-                                                    .src(imageSrc)
-                                                    .alt(imageAlt))
+                                                    .src(this.imageSrc)
+                                                    .alt(this.imageAlt))
                                             )),
                                     div(innerDiv -> innerDiv
                                             .classNames(Display.FLEX, FlexDirection.COLUMN, Gap.MEDIUM)
@@ -50,90 +48,53 @@ public class HelloWorldView extends HorizontalLayout {
                                                             .children(
                                                                     span(span -> span
                                                                             .classNames(FontWeight.SEMIBOLD, FontSize.LARGE)
-                                                                            .text(cardTitle)
+                                                                            .text(this.cardTitle)
                                                                     ),
                                                                     span(span -> span
                                                                             .classNames(FontSize.SMALL, TextColor.SECONDARY)
-                                                                            .text(cardText)
+                                                                            .text(this.cardText)
                                                                     )
                                                             )),
                                                     div(buttons -> buttons
-                                                            .classNames(Display.FLEX, Gap.SMALL, Padding.Bottom.SMALL, Padding.Horizontal.SMALL))
-                                                            .ref(buttons)
+                                                            .classNames(Display.FLEX, Gap.SMALL, Padding.Bottom.SMALL, Padding.Horizontal.SMALL)
+                                                            .children(this.buttons))
                                             ))
                             )
                     ).build());
-        }
-
-        public Card withTitle(String title) {
-            cardTitle.set(title);
-            return this;
-        }
-
-        public Card withText(String text) {
-            cardText.set(text);
-            return this;
-        }
-
-        public Card withImage(URI src, String alt) {
-            imageSrc.set(src.toString());
-            imageAlt.set(alt);
-            return this;
-        }
-
-        public Card withButton(Button button) {
-            button.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-            button.setClassName(Margin.NONE);
-            buttons.doIfPresent(div -> div.add(button));
-            return this;
         }
     }
 
     public static class CardList extends Composite<UnorderedList> {
 
+        public final ListSignal<Card> cards = listSignal();
+
         public CardList() {
             getContent().addClassNames(Gap.MEDIUM, Display.GRID, ListStyleType.NONE, Margin.NONE, Padding.NONE);
             getContent().getStyle().set("gridTemplateColumns", "repeat(auto-fill, minmax(200px, 1fr)");
-        }
-
-        public void add(Card card) {
-            getContent().add(card);
-        }
-
-        public void add(Card... cards) {
-            Stream.of(cards).forEach(this::add);
+            addAttachListener(event -> {
+                var registration = cards.addValueChangeListenerAndCallIt(cards -> {
+                    getContent().removeAll();
+                    cards.forEach(card -> getContent().add(card));
+                });
+                addDetachListener(detachEvent -> registration.remove());
+            });
         }
     }
 
     public HelloWorldView() {
         var cardList = new CardList();
-
-        cardList.add(
-                new Card()
-                        .withTitle("Card title")
-                        .withText("Lorem ipsum dolor sit amet, consectetur adipisci elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.")
-                        .withImage(URI.create("https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=640"), "Architectural photography of brown wooden house – Luca Bravo")
-                        .withButton(new Button("Hello")).withButton(new Button("World")),
-                new Card()
-                        .withTitle("Card title")
-                        .withText("Lorem ipsum dolor sit amet, consectetur adipisci elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.")
-                        .withImage(URI.create("https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=640"), "Architectural photography of brown wooden house – Luca Bravo")
-                        .withButton(new Button("Hello2")).withButton(new Button("World2")
-                        ),
-                new Card()
-                        .withTitle("Card title")
-                        .withText("Lorem ipsum dolor sit amet, consectetur adipisci elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.")
-                        .withImage(URI.create("https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=640"), "Architectural photography of brown wooden house – Luca Bravo")
-                        .withButton(new Button("Hello3")).withButton(new Button("World3")
-                        ),
-                new Card()
-                        .withTitle("Card title")
-                        .withText("Lorem ipsum dolor sit amet, consectetur adipisci elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.")
-                        .withImage(URI.create("https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=640"), "Architectural photography of brown wooden house – Luca Bravo")
-                        .withButton(new Button("Hello4")).withButton(new Button("World4")
-                        )
-        );
         add(cardList);
+
+        cardList.cards.set(Stream.generate(() -> {
+                    var card = new Card();
+                    card.cardTitle.set("Card title");
+                    card.cardText.set("Lorem ipsum dolor sit amet, consectetur adipisci elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua.");
+                    card.imageSrc.set("https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=640");
+                    card.imageAlt.set("Architectural photography of brown wooden house – Luca Bravo");
+                    card.buttons.set(List.of(new Button("Hello"), new Button("World")));
+                    return card;
+                })
+                .limit(10).toList());
     }
 
 }

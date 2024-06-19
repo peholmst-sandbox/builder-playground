@@ -16,4 +16,8 @@ public interface Signal<T> {
         valueChangeListener.accept(value());
         return reg;
     }
+
+    default Registration source(Signal<T> other) {
+        return other.addValueChangeListenerAndCallIt(this::set);
+    }
 }
