@@ -1,10 +1,13 @@
 package com.example.application.views;
 
 import com.example.application.framework.Ref;
+import com.example.application.framework.signals.Signal;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.ListItem;
+import com.vaadin.flow.component.html.UnorderedList;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
@@ -14,15 +17,17 @@ import java.util.stream.Stream;
 
 import static com.example.application.framework.Ref.ref;
 import static com.example.application.framework.html.HtmlBuilders.*;
+import static com.example.application.framework.signals.Signals.signal;
 
 @Route("hello")
 public class HelloWorldView extends HorizontalLayout {
 
     public static class Card extends Composite<ListItem> {
 
-        private final Ref<Image> image = ref();
-        private final Ref<Span> cardTitle = ref();
-        private final Ref<Span> cardText = ref();
+        private final Signal<String> imageSrc = signal();
+        private final Signal<String> imageAlt = signal();
+        private final Signal<String> cardTitle = signal();
+        private final Signal<String> cardText = signal();
         private final Ref<Div> buttons = ref();
 
         public Card() {
@@ -33,8 +38,9 @@ public class HelloWorldView extends HorizontalLayout {
                                     div(imageWrapper -> imageWrapper
                                             .classNames(Display.FLEX, Flex.GROW)
                                             .children(image(image -> image
-                                                    .classNames(MaxWidth.FULL))
-                                                    .ref(image)
+                                                    .classNames(MaxWidth.FULL)
+                                                    .src(imageSrc)
+                                                    .alt(imageAlt))
                                             )),
                                     div(innerDiv -> innerDiv
                                             .classNames(Display.FLEX, FlexDirection.COLUMN, Gap.MEDIUM)
@@ -43,11 +49,13 @@ public class HelloWorldView extends HorizontalLayout {
                                                             .classNames(Display.FLEX, FlexDirection.COLUMN, Padding.Top.MEDIUM, Padding.Horizontal.MEDIUM)
                                                             .children(
                                                                     span(span -> span
-                                                                            .classNames(FontWeight.SEMIBOLD, FontSize.LARGE))
-                                                                            .ref(cardTitle),
+                                                                            .classNames(FontWeight.SEMIBOLD, FontSize.LARGE)
+                                                                            .text(cardTitle)
+                                                                    ),
                                                                     span(span -> span
-                                                                            .classNames(FontSize.SMALL, TextColor.SECONDARY))
-                                                                            .ref(cardText)
+                                                                            .classNames(FontSize.SMALL, TextColor.SECONDARY)
+                                                                            .text(cardText)
+                                                                    )
                                                             )),
                                                     div(buttons -> buttons
                                                             .classNames(Display.FLEX, Gap.SMALL, Padding.Bottom.SMALL, Padding.Horizontal.SMALL))
@@ -58,20 +66,18 @@ public class HelloWorldView extends HorizontalLayout {
         }
 
         public Card withTitle(String title) {
-            cardTitle.doIfPresent(span -> span.setText(title));
+            cardTitle.set(title);
             return this;
         }
 
         public Card withText(String text) {
-            cardText.doIfPresent(span -> span.setText(text));
+            cardText.set(text);
             return this;
         }
 
         public Card withImage(URI src, String alt) {
-            image.doIfPresent(image -> {
-                image.setSrc(src.toString());
-                image.setAlt(alt);
-            });
+            imageSrc.set(src.toString());
+            imageAlt.set(alt);
             return this;
         }
 
